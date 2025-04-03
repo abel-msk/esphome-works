@@ -1,0 +1,55 @@
+sensor:
+  - platform: dallas_temp
+    id: dl_temp
+    name: "DL Sense"
+
+  - platform: ntc
+    sensor: resistance_sensor
+    id: out_temp
+    calibration:
+      # b_constant: 3950
+      # reference_temperature: 0°C
+      # reference_resistance: 100Ohm
+      - 112.21Ohm -> 29.5°C
+      - 110.2Ohm -> 25.2°C
+      - 130.89Ohm -> 80°C  
+    name: NTC Temperature
+  # Example source sensors:
+
+  - platform: resistance
+    id: resistance_sensor
+    sensor: source_sensor
+    configuration: DOWNSTREAM
+    resistor: 149Ohm
+    reference_voltage: 5.03v  
+    # accuracy_decimals: 3
+    # update_interval: 15s
+    #reference_voltage: 2.87v
+    # reference_voltage: 1.55v
+    # reference_voltage: 3.336v    
+    accuracy_decimals: 3
+    # update_interval: 15s
+    filters:   
+      - calibrate_linear:
+          method: least_squares
+          datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 94.09 -> 110.2
+          - 97.52 -> 112.8
+
+  - platform: adc
+    id: source_sensor
+    attenuation: auto
+    update_interval: 5s
+    accuracy_decimals: 3
+    pin: GPIO03
+    filters:
+      - sliding_window_moving_average:
+          window_size: 12
+          send_every: 6
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 2.835 -> 2.855
+          - 2.733 -> 2.715

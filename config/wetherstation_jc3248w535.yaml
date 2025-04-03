@@ -1,0 +1,917 @@
+esphome:
+  name: wetherstation_jc3248w535
+  friendly_name: WetherStation
+  # includes:
+  #   - <iostream>
+  #   - <sstream>
+  # on_boot:
+  #   - priority: -150.0
+  #     then:
+  #         - delay: 180s
+  #         - logger.log: "On boot Event."
+  #         - script.execute: cmdUpdateDisplay
+
+esp32:
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_FATFS_LFN_STACK: "y"
+
+packages:
+  device: !include templates/JC3248W535.yaml
+  # extcard: !include templates/sdcard.yaml
+  # substitutions_1: !include templates/wether_subst.yaml
+  # font_1: !include templates/wether_70.yaml
+  # substitutions: !include templates/icons_subst.yaml
+  # font: !include templates/icons_24.yaml
+
+# https://github.com/n-serrette/esphome_sd_card
+# https://esphome.io/components/external_components#git
+# https://github.com/Mnark/esphome-components
+# https://community.home-assistant.io/t/check-from-esp-side-if-connected-to-ha/211708
+
+external_components:
+  - source:
+        type: local
+        path: local_file/components
+    components: [local_image, sd_mmc_card]
+
+color:
+  - id: cClearDay
+    hex: "008ed0"
+
+  - id: cClearNight
+    hex: "072730"
+
+  - id: cPartlyCloudDay
+    hex: 2084c0
+
+  - id: cPartlyCloudNight
+    hex: "06263e"
+
+  - id: cCloudNight
+    hex: 1e2226
+
+  - id: cCloudDay
+    hex: 6b8eb0
+
+  - id: cRainDay
+    hex: 2f4342
+
+  - id: cRainNight
+    hex: 2f4342
+
+  - id: cSnowDay
+    hex: 5d90a4
+
+  - id: cSnowNight
+    hex: 243240
+
+  - id: cTextSecond
+    hex: FFFFFF
+
+  - id: cTextPrim
+    hex: FFFFFF
+
+      
+  # cPartlyCloudDay:     "0x6e8faf" # partly_cloudy_day
+  # cCloudNight:         "0x22262f" # partly_cloudy_night
+  # cCloudDay:           "0x6e8faf" # cloud
+  # cRainDay:            "0x2f4342" # rainy
+  # cRainNight:          "0x2f4342"
+  # cSnowDay:            "0x5d90a4" # snowing
+  # cSnowNight:          "0x243240" # snowing
+
+globals:
+  - id: gboolIsDay
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: gboolIsBoot
+    type: bool
+    restore_value: no
+    initial_value: "true"
+  # - id: gstrLastUrl
+  #   type: string
+  #   restore_value: yes
+  #   initial_value: "/bgwf/day_clear.png" 
+  - id: gintCurWType
+    type: int
+    restore_value: no
+    initial_value: "1" 
+  - id: gintLastWType
+    type: int
+    restore_value: yes
+    initial_value: "1" 
+  
+
+ # tClearDay:  1; tClearNight:  2;  tPartlyCloudDay: 3;  tCloudNight:  4;  tCloudDay:  5
+ # tRainDay: 6; tRainNight: 7;  tSnowDay:  8;  tSnowNight: 9
+
+substitutions:
+  displayRotation:          "270"
+
+  sensorStateSunnyDay:      "sunny"
+  sensorStateClearNight:    "clear-night"
+  sensorStateClearDay:      "clear-day"
+  sensorStateRainy:         "rainy" 
+  sensorStateCloud:         "cloudy" 
+  sensorStatePartlyCloud:   "partlycloudy" 
+  sensorStateClear:         "clear"   # clear-night
+  sensorStateSnow:          "snowly"
+  sensorStateFog:           "fog"
+  sensorSunStateUP:         "above_horizon"  #  below_horizon#
+  
+  # Wether type icons
+  iClearDay:           "\U0000f157" # clear_day
+  iClearNight:         "\U0000e51c" # dark_mode
+  iPartlyCloudDay:     "\U0000f172" # partly_cloudy_day
+  iPartlyCloudNight:   "\U0000f174" # partly_cloudy_day
+  iCloudNight:         "\U0000e818" # cloud
+  iCloudDay:           "\U0000e2bd" # cloud
+  iRainDay:            "\U0000f176" # rainy
+  iRainNight:          "\U0000f61e" # rainy_light
+  iSnowDay:            "\U0000e819" # sunny_snowing
+  iSnowNight:          "\U0000e2cd" # weather_snowy
+
+  # Ether type string
+  tSunnyDay:           "Солнечно"
+  tClearDay:           "Солнечно" # clear_day     1
+  tClearNight:         "Безоблачно" # dark_mode   2
+  tPartlyCloudDay:     "Переменная облачность" # partly_cloudy_day   3
+  tPartlyCloudNight:   "Переменная облачность" # partly_cloudy_day   4
+  tCloudDay:           "Облачно" # cloud  5
+  tCloudNight:         "Облачно" # partly_cloudy_night   6
+  tRainDay:            "Дождь" # rainy    7
+  tRainNight:          "Дождь" #          8
+  tSnowDay:            "Снег" # snowing   9
+  tSnowNight:          "Снег" # snowing   10
+
+  bgSunnyDay:         "/bgwf/day_clear.png"
+  bgClearDay:         "/bgwf/day_clear.png"
+  bgClearNight:       "/bgwf/night_clear.png"
+  bgtPartlyCloudDay:  "/bgwf/day_partly_cloud.png"
+  bgPartlyCloudNight: "/bgwf/night_partly_cloud.png"
+  bgCloudDay:         "/bgwf/day_cloud.png"
+  bgCloudNight:       "/bgwf/night_cloud.png"
+  bgRainDay:          "/bgwf/day_rain.png"
+  bgRainNight:        "/bgwf/day_rain.png"
+  bgSnowDay:          "/bgwf/day_snow.png"
+  bgSnowNight:        "/bgwf/night_snow.png"
+
+
+  fTextOutTempBig:      "Inter_72"
+  fTextOutTempSmal:     "Inter_22"
+  fTextTimeBig:         "Inter_50"
+  fTextTimeSmal:        "Inter_17"
+  fWetherIco:           "gIcons_24"
+  fFrameTitle:          "Inter_12"
+  fFrameIcon:           "gIcons_18"
+  fFrameValue:          "Inter_24"
+
+
+  tHomeFrTitle:         "В квартире"
+  tHumFrTitle:          "Влажность"
+  tPressFrTitle:        "Давление"
+
+  iHome:               "\U0000e80f" # snowing
+  iTemp:               "\U0000e1ff" # device_thermostat
+  iPressure:           "\U0000f6dd" # readiness_score
+  iHumidity:           "\U0000e798" # water_drop
+
+  
+  w01: "Понедельник"
+  w02: "Вторник"
+  w03: "Среда"
+  w04: "Четверг"
+  w05: "Пятница"
+  w06: "Суббота"
+  w07: "Воскресенье"
+  
+  m01: "Января"
+  m02: "Вефрвля"
+  m03: "Марта"
+  m04: "Апреля"
+  m05: "Мая"
+  m06: "Июня"
+  m07: "Июля"
+  m08: "Августа"
+  m09: "Сентября"
+  m10: "Октября"
+  m11: "Ноября"
+  m12: "Декабря"
+
+#   "\U0000ebdb" # thunderstorm
+#   "\U0000e819" # sunny_snowing
+#   "\U0000e818" # foggy
+#   "\U0000f60b" # weather_mix
+#   "\U0000f87e" # humidity_percentage  
+#   "\U0000f34f" # moon_stars
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "wUQvfW/jwKb8eRPg9+5HAmO1+XHrJ1VsTevO85kdTAY="
+  
+  on_client_connected:
+    then:
+      # - script.execute: cmdUpdateDisplay
+      - logger.log:
+          format: "Client %s connected to API with IP %s"
+          args: ["client_info.c_str()", "client_address.c_str()"]
+
+ota:
+  - platform: esphome
+    password: "156622a7771ea1396a79dede0a442a44"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Jc3248W535-Test Fallback Hotspot"
+    password: "WimgjYaYVCD7"
+
+  # on_connect:
+  #   then:
+  #     - logger.log: "On WiFi Connected Event"
+  #     - script.execute: cmdUpdateDisplay
+
+captive_portal:
+
+i2c:
+  - sda: 18
+    scl: 17
+    id: sensor_bus
+
+font:
+  - file: "gfonts://Material+Symbols+Outlined"
+    id: gIcons_18
+    size: 18
+    glyphs: [
+      "${iClearDay}",
+      "${iClearNight}",
+      "${iCloudDay}",          
+      "${iCloudNight}",
+      "${iPartlyCloudDay}",
+      "${iPartlyCloudNight}",      
+      "${iRainDay}",
+      "${iRainNight}",
+      "${iSnowDay}",
+      "${iSnowNight}",
+      "${iHome}",
+      "${iTemp}",
+      "${iPressure}",
+      "${iHumidity}"
+      ]
+
+  - file: "gfonts://Material+Symbols+Outlined"
+    id: gIcons_24
+    size: 24
+    glyphs: [
+      "${iClearDay}",
+      "${iClearNight}",
+      "${iCloudDay}",          
+      "${iCloudNight}",
+      "${iPartlyCloudDay}",
+      "${iPartlyCloudNight}",
+      "${iRainDay}",
+      "${iRainNight}",
+      "${iSnowDay}",
+      "${iSnowNight}",
+      "${iHome}",
+      "${iTemp}",
+      "${iPressure}",
+      "${iHumidity}"
+      ] 
+
+  # - file:
+  #     type: gfonts
+  #     family: Inter
+  #   id: Inter_9
+  #   size: 9
+  #   glyphsets:
+  #     - GF_Cyrillic_Core
+
+
+  - file: "gfonts://Inter"
+    id: Inter_12
+    size: 12
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Inter"
+    id: Inter_17
+    size: 18
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Inter"
+    id: Inter_22
+    size: 22
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Inter"
+    id: Inter_24
+    size: 24
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Inter"
+    id: Inter_32
+    size: 32
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Inter"
+    id: Inter_50
+    size: 50
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Inter"
+    id: Inter_72
+    size: 72
+    bpp: 4
+    glyphsets:
+      - GF_Cyrillic_Core
+
+  - file: "gfonts://Material+Symbols+Outlined"
+    id: mso_60
+    size: 60
+    bpp: 4
+    glyphs: [
+      "\U0000e63e", #wi-fi
+      "\U0000E1FF", #device_thermostat
+      "\U0000f076", #thermostat
+      "\U0000F558", #Humidity Indoor
+      "\U0000E276",  #Cool To Dry
+      "\U0000f87e",  #Humidity Percentage
+        ]
+
+time:
+  - platform: sntp
+    id: netwotk_time
+    timezone: Europe/Moscow
+    servers:
+      - 192.168.168.1
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+    on_time_sync:
+      then:
+          - logger.log: "On time sync Event."
+          - script.execute: cmdUpdateCalendar
+          # - script.execute: cmdUpdateDisplay
+    on_time:
+      # Every 1 minutes
+      - seconds: 0
+        minutes: '*'
+        then:
+          - script.execute: cmdUpdateCalendar
+          - script.execute: backLight
+      # Every 10 minutes    
+      - seconds: 0
+        minutes: '/10'
+        then:
+          - script.execute: cmdUpdateDisplay
+  
+
+script:
+  # - id: getCurWetherTypePath
+  #   then:
+  #     - lambda: |-
+  #         int wTypeID = id(gintCurWType)-1;
+  #         const char *images[10] = {"${bgClearDay}", "${bgClearNight}","${bgtPartlyCloudDay}",
+  #                         "${bgPartlyCloudNight}","${bgCloudDay}","${bgCloudNight}",
+  #                         "${bgRainDay}","${bgRainNight}","${bgSnowDay}","${bgSnowNight}"};
+
+  #         // id(homeTempFrame).color("0xFFFFFF");
+  #         ESP_LOGD("local_image.reload", "Current wether name %s, id %d",images[wTypeID], wTypeID);
+  #         return  images[wTypeID];
+
+  - id: backLight
+    then:
+      - lambda: |-
+          if ((id(netwotk_time).now().hour >= 0) && (id(netwotk_time).now().hour < 7)) {
+            id(gpio_backlight_pwm).set_level(0.2);
+            // ESP_LOGD("BackLight","Switch backlight to level:  0.2, Time hour %d",id(netwotk_time).now().hour);
+          }
+          else {
+            id(gpio_backlight_pwm).set_level(1);
+            // ESP_LOGD("BackLight","Switch backlight to level: 1, Time hour %d",id(netwotk_time).now().hour);
+          }       
+
+  - id: cmdUpdateCalendar
+    then:
+      - lvgl.label.update:
+          id: curTime
+          text:
+            format: "%2d:%02d"
+            args: [ id(netwotk_time).now().hour, id(netwotk_time).now().minute ]
+      - lvgl.label.update:
+          id: weekDay
+          text: !lambda |-
+                if (id(netwotk_time).now().day_of_week == 2) { return "${w01}";}
+                else if (id(netwotk_time).now().day_of_week == 3) { return "${w02}";}
+                else if (id(netwotk_time).now().day_of_week == 4) { return "${w03}";}
+                else if (id(netwotk_time).now().day_of_week == 5) { return "${w04}";}
+                else if (id(netwotk_time).now().day_of_week == 6) { return "${w05}";}
+                else if (id(netwotk_time).now().day_of_week == 7) { return "${w06}";}
+                else if (id(netwotk_time).now().day_of_week == 1) { return "${w07}";}
+                return "${w01}";
+      - lvgl.label.update:
+          id: curDate
+          text: !lambda |-
+                const char* charMonth[12]{"${m01}", "${m02}","${m03}", "${m04}", "${m05}", "${m06}",
+                  "${m07}", "${m08}", "${m09}", "${m10}", "${m11}", "${m12}"};
+                static char buf[50];
+                char out_buff[256];
+                if (id(netwotk_time).now().month == 1) { sprintf(buf, "%s", "${m01}");}
+                else if (id(netwotk_time).now().month == 2) { sprintf(buf, "%s", "${m02}");}
+                else if (id(netwotk_time).now().month == 3) { sprintf(buf, "%s", "${m03}");}
+                else if (id(netwotk_time).now().month == 4) { sprintf(buf, "%s", "${m04}");}
+                else if (id(netwotk_time).now().month == 5) { sprintf(buf, "%s", "${m05}");}
+                else if (id(netwotk_time).now().month == 6) { sprintf(buf, "%s", "${m06}");}
+                else if (id(netwotk_time).now().month == 7) { sprintf(buf, "%s", "${m07}");}
+                else if (id(netwotk_time).now().month == 8) { sprintf(buf, "%s", "${m08}");}
+                else if (id(netwotk_time).now().month == 9) { sprintf(buf, "%s", "${m09}");}
+                else if (id(netwotk_time).now().month == 10) { sprintf(buf, "%s", "${m10}");}
+                else if (id(netwotk_time).now().month == 11) { sprintf(buf, "%s", "${m11}");}
+                else if (id(netwotk_time).now().month == 12) { sprintf(buf, "%s", "${m12}");}
+
+                sprintf(out_buff,  "%d %s %d",
+                      id(netwotk_time).now().day_of_month,
+                      charMonth[id(netwotk_time).now().month],
+                      id(netwotk_time).now().year );
+                return ((std::string) out_buff);
+
+  - id: cmdUpdateDisplay
+    then:
+      - lambda: |-
+            // std::string st = id(haWetherType).state;
+            // std::string strSunState = id(haSunState).state;
+
+            if ( id(haSunState).state == "${sensorSunStateUP}" ) 
+            { 
+              id(gboolIsDay) = true; 
+              // ESP_LOGD("cmdUpdateDisplay","Set gboolIsDay:  %s | Should be True", id(haSunState).state.c_str());
+            } else 
+            { 
+              // ESP_LOGD("cmdUpdateDisplay","Set gboolIsDay:  %s | Should be False", id(haSunState).state.c_str());
+              id(gboolIsDay) = false; 
+            }
+            
+            if ( id(haWetherType).state == "${sensorStateClearDay}") { id(gintCurWType) = 1; }  
+            else if ( id(haWetherType).state == "${sensorStateSunnyDay}") { id(gintCurWType) = 1; }           // tClearDay: - 1
+            else if ( id(haWetherType).state == "${sensorStateClearNight}") { id(gintCurWType) = 2; }       // tClearNight  - 2
+            else if ( id(haWetherType).state == "${sensorStatePartlyCloud}" && id(gboolIsDay)) { id(gintCurWType) = 3; }   // tPartlyCloudDay  - 3
+            else if ( id(haWetherType).state == "${sensorStatePartlyCloud}" && !id(gboolIsDay)) { id(gintCurWType) = 4; }  // tPartlyCloudNight  - 4
+            else if ( id(haWetherType).state == "${sensorStateCloud}" && id(gboolIsDay)) { id(gintCurWType) = 5; }         // tCloudDay   - 5
+            else if ( id(haWetherType).state == "${sensorStateCloud}" && !id(gboolIsDay)) { id(gintCurWType) = 6; }        // tCloudNight - 6
+            else if ( id(haWetherType).state == "${sensorStateRainy}" && id(gboolIsDay)) { id(gintCurWType) = 7; }         // tRainDay    - 7
+            else if ( id(haWetherType).state == "${sensorStateRainy}" && !id(gboolIsDay)) { id(gintCurWType) = 8; }        // tRainNight  - 8      
+            else if ( id(haWetherType).state == "${sensorStateSnow}" && id(gboolIsDay)) { id(gintCurWType) = 9; }          // tSnowDay    - 9
+            else if ( id(haWetherType).state == "${sensorStateSnow}" && !id(gboolIsDay)) { id(gintCurWType) = 10; }  
+            else  id(gintCurWType) = 1;     // tSnowNight  - 10                            
+            ESP_LOGD("cmdUpdateDisplay","Wether state (haWetherType):  %s (%d), isDay %s" , id(haWetherType).state.c_str(), id(gintCurWType), id(gboolIsDay)?"True":"False" );
+
+      - lvgl.label.update:
+          id: wetherTypeText
+          text: 
+              format: "%s"
+              args: '(new const char *[10]{ "${tClearDay}", "${tClearNight}", "${tPartlyCloudDay}", "${tPartlyCloudNight}", 
+                        "${tCloudDay}", "${tCloudNight}", "${tRainDay}", "${tRainNight}", "${tSnowDay}", "${tSnowNight}" })[id(gintCurWType)-1]'
+
+      - lvgl.label.update:
+          id: wetherTypeIco
+          text: 
+              format: "%s"
+              args: '(new const char *[10]{ "${iClearDay}", "${iClearNight}", "${iPartlyCloudDay}", "${iPartlyCloudNight}", 
+                        "${iCloudDay}", "${iCloudNight}", "${iRainDay}", "${iRainNight}","${iSnowDay}", "${iSnowNight}" })[id(gintCurWType)-1]'
+
+      - lvgl.label.update:
+          id: wetherTempNum
+          text:
+              format: "%+.1f°"
+              args: ['id(haWetherOutdoor).state']
+
+      - if:
+          condition:
+            lambda: |-
+                ESP_LOGD("cmdUpdateDisplay","Check, is wether type are changed. Last %d, new %d",id(gintLastWType), id(gintCurWType) );
+                return id(gintCurWType) != id(gintLastWType);
+          then:
+            - script.execute: updateWetherType
+     
+  - id: updateWetherType
+    then:
+      - local_image.reload: 
+          id: varImage
+          path:  !lambda |-
+              const char *images[10] = {"${bgClearDay}", "${bgClearNight}","${bgtPartlyCloudDay}",
+                              "${bgPartlyCloudNight}","${bgCloudDay}","${bgCloudNight}",
+                              "${bgRainDay}","${bgRainNight}","${bgSnowDay}","${bgSnowNight}"};                   
+              id(gintLastWType) = id(gintCurWType);
+              ESP_LOGD("updateWetherType","Load wether type bg image :  %s, Cur id is (%d)", 
+                        images[id(gintCurWType)-1], id(gintCurWType));
+              return  images[id(gintCurWType)-1];
+
+    
+# wetherTempNum
+# wetherTypeIco
+# wetherTypeText
+# wetherTempNum
+
+sd_mmc_card:
+  id: sdcard1
+  mode_1bit: true
+  cmd_pin: GPIO11
+  clk_pin: GPIO12
+  data0_pin: GPIO13
+  # power_ctrl_pin: GPIO10
+
+# Config examples
+# https://community.home-assistant.io/t/how-to-display-an-online-image/768036/33?page=2
+local_image:
+  - id: varImage
+    path:  "/bgwf/day_rain.png"
+    sd_mmc_card_id: sdcard1
+    format: png
+    resize: 480x320
+    type: RGB565     
+    # placeholder: bgDayClear
+    on_load_finished:
+      - lvgl.image.update:
+          id: bgImage
+          src: varImage
+  
+image:
+  # Background
+  - file: resources/img/bg/day_clear.png
+    id: bgDayClear
+    resize: 480x320
+    type: RGB565
+    transparency: alpha_channel
+
+  # ESP home logo  
+  - file: resources/icons/favicon-512x512.png
+    id: local_logo
+    resize: 200x200
+    type: RGB565
+    transparency: alpha_channel
+
+sensor:
+  - platform: aht10
+    variant: AHT20
+    i2c_id: sensor_bus
+    address: 0x38
+    temperature:
+      name: "Living Room Temperature"
+      unit_of_measurement: "°C"
+      device_class: "temperature"
+      state_class: "measurement"
+      accuracy_decimals: 1
+      on_value:
+        then:
+          # - logger.log:
+          #     format: "Temperature: %f"
+          #     args: [x]
+          - lvgl.label.update:
+              id: homeFfValue
+              text:
+                  format: "%+.1f°"
+                  args: [x] 
+    humidity:
+      name: "Living Room Humidity"
+      on_value:
+        then:
+          # - logger.log:
+          #     format: "Humidity: %f"
+          #     args: [x]         
+          - lvgl.label.update:
+              id: humFrValue
+              text:
+                  format: "%.0f%%"
+                  args: [x] 
+    update_interval: 60s
+    
+  - platform: bmp280_i2c
+    i2c_id: sensor_bus
+    address: 0x77
+    temperature:
+      name: "Living Room Temperature 2"
+      oversampling: 16x
+      disabled_by_default: true
+    pressure:
+      name: "Living Room Pressure"
+      on_value:
+        then:
+          # - logger.log:
+          #     format: "Pressure: %f"
+          #     args: [x]
+          - lvgl.label.update:
+              id: pressFrValue
+              text:
+                  format: "%.0fmm"
+                  args: ['x*0.0075006*100'] 
+    update_interval: 60s
+
+  - platform: homeassistant
+    id: haWetherOutdoor
+    name: "External outdoor thermometr sensor"
+    entity_id: sensor.nanosens01_temperature
+    disabled_by_default: true
+
+
+# text: !lambda return id(text_sensor).state;
+
+text_sensor:
+  - platform: homeassistant
+    id: haWetherType
+    name: "Current wether type"
+    entity_id: weather.forecast_home
+    disabled_by_default: true
+
+  - platform: homeassistant
+    id: haSunState
+    name: "Sun position day/night"
+    entity_id: sun.sun
+    disabled_by_default: true
+    on_value: 
+      then:
+        - lambda: |-
+              ESP_LOGD("haSunState","Sun position: %s",  id(haSunState).state);
+              if (id(gboolIsBoot)) {
+                id(cmdUpdateDisplay).execute();
+                id(updateWetherType).execute();                
+                id(gboolIsBoot) = false;
+              }
+
+lvgl:
+  #full_refresh: true # not needed any longer
+  draw_rounding: 8 # necessary for the axs15231 display controller
+  displays: main_display
+  touchscreens: main_touchscreen
+  # bg_color: 0
+  # disp_bg_image: bg_image
+  disp_bg_opa: COVER
+  border_width: 0
+  outline_width: 0
+  gradients:
+    - id: wg_bg_grad
+      direction: ver
+      dither: ordered
+      stops:
+        - color: 0xAFBEDB
+          position: 0
+        - color: 0xA7B5D1
+          position: 200
+
+  style_definitions:
+    #
+    #  Плашка для температуры влажности и давления
+    #
+    - id: secontTempFrame
+      align: TOP_LEFT
+      bg_opa: 30%
+      bg_color: cClearDay
+      # bg_grad: wg_bg_grad
+      text_color: cTextSecond
+      clip_corner: true
+      radius: 8
+      border_width: 0
+      # border_opa: 10%
+      # outline_opa: 20%
+      outline_width: 0
+      outline_pad: 0
+      pad_all: 0
+
+    # -id: primTextColor
+    #   text_color: сTextSecond
+    # -id: secTextColor
+    #   text_color: сTextSecond
+
+  pages:
+    - id: main_page
+      widgets: 
+      #
+      #   Background 
+      #
+        - image:    
+            id: bgImage  
+            align: CENTER
+            src: bgDayClear
+            # src: varImage
+            y: 0
+            x: 0
+
+        # # Wi-Fi status
+        # - label:
+        #     id: wifi_status
+        #     align: TOP_RIGHT
+        #     x: -5
+        #     y: 5
+        #     text: "${wifi_100}"
+        #     text_color: 0xFFFFFF
+        #     text_font: icons_24
+
+        # # Home Assistant status
+        # - label:
+        #     id: ha_status
+        #     align: TOP_RIGHT
+        #     x: -35
+        #     y: 5
+        #     text: "${ha}"
+        #     text_color: 0xFFFFFF
+        #     text_font: icons_24
+
+        #
+        #  Outdoor temperature block
+        #
+        - label:            # Wether state icon
+            id: wetherTypeIco  
+            align: TOP_LEFT
+            x: 40
+            y: 41
+            text_font: "${fWetherIco}"
+            text: "${iClearDay}"
+            text_color: cTextSecond
+
+        - label:            # Wether state Text
+            id: wetherTypeText  
+            align: TOP_LEFT
+            x: 72
+            y: 41
+            text_font: "${fTextOutTempSmal}"
+            text: "${tClearDay}" 
+            text_color: cTextSecond 
+
+        - label:            # Wether Temperature 
+            id: wetherTempNum  
+            align: TOP_LEFT
+            x: 40
+            y: 82
+            text_font: "${fTextOutTempBig}"
+            text: "25,2°" 
+            text_color: cTextPrim
+
+        #
+        #  Current date block
+        #
+        - label:            # Big time indicator
+            id: curTime  
+            align: TOP_RIGHT
+            x: -23
+            y: 72
+            text_font: "${fTextTimeBig}"
+            text: "--:--" 
+            text_color: cTextPrim
+
+        - label:            # Day of week
+            id: weekDay  
+            align: TOP_RIGHT
+            x: -23
+            y: 138
+            text_font: "${fTextTimeSmal}"
+            text: "${w01}" 
+            text_color: cTextSecond
+
+        - label:            # Date 
+            id: curDate  
+            align: TOP_RIGHT
+            x: -23
+            y: 165
+            text_font: "${fTextTimeSmal}"
+            text: "2 Января 2025" 
+            text_color: cTextSecond
+
+        #
+        #  Home temperature block
+        #
+
+        # - obj:
+        #     id: homeTempFrame
+        #     x: 15
+        #     y: 206
+        #     width: 140
+        #     height: 90
+        #     styles: secontTempFrame
+        #     scroll_on_focus: false
+        #     scrollbar_mode: "OFF"
+        #     bg_color: cClearDay   #  Variant
+        #     # widgets:
+        #     # cClearDay
+
+        - label:   #Frame Title
+            id: homeFrTitle
+            x: 36
+            y: 218
+            text_font: "${fFrameTitle}"
+            text: "${tHomeFrTitle}" 
+            text_color: cTextSecond
+
+        - label:   #Frame Icon
+            id: homeFrIcon
+            x: 33
+            y: 242
+            text_font: "${fFrameIcon}"
+            text: "${iTemp}" 
+            text_color: cTextSecond
+
+        - label:   #Frame Value
+            id: homeFfValue
+            x: 54
+            y: 240
+            text_font: "${fFrameValue}"
+            text: "23,2°" 
+            text_color: cTextSecond
+
+        #
+        #  Humidity block
+        #
+        # - obj:
+        #     id: humFrame
+        #     x: 170
+        #     y: 206
+        #     width: 140
+        #     height: 90
+        #     styles: secontTempFrame
+        #     scroll_on_focus: false
+        #     scrollbar_mode: "OFF"
+        #     bg_color: cClearDay   #  Variant
+
+
+        - label:   #Frame Title
+            id: humFrTitle
+            x: 189
+            y: 218
+            text_font: "${fFrameTitle}"
+            text: "${tHumFrTitle}" 
+            text_color: cTextSecond
+
+        - label:   #Frame Icon
+            id: humFrIcon
+            x: 189
+            y: 242
+            text_font: "${fFrameIcon}"
+            text: "${iHumidity}" 
+            text_color: cTextSecond
+
+        - label:   #Frame Value
+            id: humFrValue
+            x: 210
+            y: 240
+            text_font: "${fFrameValue}"
+            text: "70%" 
+            text_color: cTextSecond
+            
+        #
+        #  Pressue block
+        #
+        # - obj:
+        #     id: pressFrame
+        #     x: 325
+        #     y: 206
+        #     width: 140
+        #     height: 90
+        #     styles: secontTempFrame
+        #     scroll_on_focus: false
+        #     scrollbar_mode: "OFF"
+        #     bg_color: cClearDay   #  Variant
+ 
+
+        - label:   #Frame Title
+            id: pressFrTitle
+            x: 343
+            y: 218
+            text_font: "${fFrameTitle}"
+            text: "${tPressFrTitle}" 
+            text_color: cTextSecond
+
+        - label:   #Frame Icon
+            id: pressFrIcon
+            x: 343
+            y: 242
+            text_font: "${fFrameIcon}"
+            text: "${iPressure}" 
+            text_color: cTextSecond
+
+        - label:   #Frame Value
+            id: pressFrValue
+            x: 365
+            y: 240
+            text_font: "${fFrameValue}"
+            text: "246mm" 
+            text_color: cTextSecond
