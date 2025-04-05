@@ -36,6 +36,7 @@ external_components:
         path: local_file/components
     components: [local_image, sd_mmc_card]
 
+
 color:
   - id: cClearDay
     hex: "008ed0"
@@ -243,6 +244,11 @@ wifi:
   #     - script.execute: cmdUpdateDisplay
 
 captive_portal:
+
+# mqtt:
+#   broker: 192.168.168.76
+#   username: livingroom
+#   password: !secret mqtt_password
 
 i2c:
   - sda: 18
@@ -527,7 +533,6 @@ script:
               ESP_LOGD("updateWetherType","Load wether type bg image :  %s, Cur id is (%d)", 
                         images[id(gintCurWType)-1], id(gintCurWType));
               return  images[id(gintCurWType)-1];
-
     
 # wetherTempNum
 # wetherTypeIco
@@ -556,6 +561,10 @@ local_image:
       - lvgl.image.update:
           id: bgImage
           src: varImage
+    
+    on_error:
+      - logger.log: "Loading image Error"
+
   
 image:
   # Background
