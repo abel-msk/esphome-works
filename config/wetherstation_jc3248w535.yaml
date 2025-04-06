@@ -119,7 +119,7 @@ substitutions:
   sensorStateCloud:         "cloudy" 
   sensorStatePartlyCloud:   "partlycloudy" 
   sensorStateClear:         "clear"   # clear-night
-  sensorStateSnow:          "snowly"
+  sensorStateSnow:          "snowy"
   sensorStateFog:           "fog"
   sensorSunStateUP:         "above_horizon"  #  below_horizon#
   
@@ -202,13 +202,6 @@ substitutions:
   m11: "Ноября"
   m12: "Декабря"
 
-#   "\U0000ebdb" # thunderstorm
-#   "\U0000e819" # sunny_snowing
-#   "\U0000e818" # foggy
-#   "\U0000f60b" # weather_mix
-#   "\U0000f87e" # humidity_percentage  
-#   "\U0000f34f" # moon_stars
-
 # Enable logging
 logger:
   level: DEBUG
@@ -254,6 +247,15 @@ i2c:
   - sda: 18
     scl: 17
     id: sensor_bus
+
+sd_mmc_card:
+  id: sdcard1
+  mode_1bit: true
+  cmd_pin: GPIO11
+  clk_pin: GPIO12
+  data0_pin: GPIO13
+  # power_ctrl_pin: GPIO10
+
 
 font:
   - file: "gfonts://Material+Symbols+Outlined"
@@ -393,25 +395,13 @@ time:
         then:
           - script.execute: cmdUpdateDisplay
   
-
 script:
-  # - id: getCurWetherTypePath
-  #   then:
-  #     - lambda: |-
-  #         int wTypeID = id(gintCurWType)-1;
-  #         const char *images[10] = {"${bgClearDay}", "${bgClearNight}","${bgtPartlyCloudDay}",
-  #                         "${bgPartlyCloudNight}","${bgCloudDay}","${bgCloudNight}",
-  #                         "${bgRainDay}","${bgRainNight}","${bgSnowDay}","${bgSnowNight}"};
-
-  #         // id(homeTempFrame).color("0xFFFFFF");
-  #         ESP_LOGD("local_image.reload", "Current wether name %s, id %d",images[wTypeID], wTypeID);
-  #         return  images[wTypeID];
 
   - id: backLight
     then:
       - lambda: |-
           if ((id(netwotk_time).now().hour >= 0) && (id(netwotk_time).now().hour < 7)) {
-            id(gpio_backlight_pwm).set_level(0.2);
+            id(gpio_backlight_pwm).set_level(0.1);
             // ESP_LOGD("BackLight","Switch backlight to level:  0.2, Time hour %d",id(netwotk_time).now().hour);
           }
           else {
@@ -466,9 +456,6 @@ script:
   - id: cmdUpdateDisplay
     then:
       - lambda: |-
-            // std::string st = id(haWetherType).state;
-            // std::string strSunState = id(haSunState).state;
-
             if ( id(haSunState).state == "${sensorSunStateUP}" ) 
             { 
               id(gboolIsDay) = true; 
@@ -534,18 +521,7 @@ script:
                         images[id(gintCurWType)-1], id(gintCurWType));
               return  images[id(gintCurWType)-1];
     
-# wetherTempNum
-# wetherTypeIco
-# wetherTypeText
-# wetherTempNum
 
-sd_mmc_card:
-  id: sdcard1
-  mode_1bit: true
-  cmd_pin: GPIO11
-  clk_pin: GPIO12
-  data0_pin: GPIO13
-  # power_ctrl_pin: GPIO10
 
 # Config examples
 # https://community.home-assistant.io/t/how-to-display-an-online-image/768036/33?page=2
@@ -563,7 +539,9 @@ local_image:
           src: varImage
     
     on_error:
-      - logger.log: "Loading image Error"
+      - logger.log: 
+          format: "Loading image Error %d"
+          args: [x]
 
   
 image:
@@ -692,7 +670,7 @@ lvgl:
     #
     #  Плашка для температуры влажности и давления
     #
-    - id: secontTempFrame
+    - id: valuesFrameStyle
       align: TOP_LEFT
       bg_opa: 30%
       bg_color: cClearDay
@@ -816,7 +794,7 @@ lvgl:
         #     y: 206
         #     width: 140
         #     height: 90
-        #     styles: secontTempFrame
+        #     styles: valuesFrameStyle
         #     scroll_on_focus: false
         #     scrollbar_mode: "OFF"
         #     bg_color: cClearDay   #  Variant
@@ -856,7 +834,7 @@ lvgl:
         #     y: 206
         #     width: 140
         #     height: 90
-        #     styles: secontTempFrame
+        #     styles: valuesFrameStyle
         #     scroll_on_focus: false
         #     scrollbar_mode: "OFF"
         #     bg_color: cClearDay   #  Variant
@@ -895,7 +873,7 @@ lvgl:
         #     y: 206
         #     width: 140
         #     height: 90
-        #     styles: secontTempFrame
+        #     styles: valuesFrameStyle
         #     scroll_on_focus: false
         #     scrollbar_mode: "OFF"
         #     bg_color: cClearDay   #  Variant
