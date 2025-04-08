@@ -10,7 +10,7 @@
 **/src/
 **/platformio.ini
 /secrets.yaml
-/start.sh
+/*.sh
 *.code-workspace
 /resources/
 **/.DS_Store
