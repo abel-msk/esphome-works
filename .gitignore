@@ -11,7 +11,7 @@
 **/platformio.ini
 **/__pycache__/
 /secrets.yaml
-/start.sh
+/*.sh
 *.code-workspace
 /resources/
 **/.DS_Store
