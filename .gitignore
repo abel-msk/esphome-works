@@ -9,6 +9,7 @@
 **/lib/
 **/src/
 **/platformio.ini
+**/__pycache__/
 /secrets.yaml
 /start.sh
 *.code-workspace
