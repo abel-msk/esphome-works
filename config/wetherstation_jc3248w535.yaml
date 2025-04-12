@@ -252,8 +252,8 @@ web_server:
   port: 80
   local: true
   auth:
-    username: abel
-    password: test
+    username: "abel"
+    password: "test"
 
 sd_mmc_card:
   id: sdcard1
