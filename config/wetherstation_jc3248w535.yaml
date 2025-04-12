@@ -34,7 +34,12 @@ external_components:
   - source:
         type: local
         path: local_file/components
-    components: [local_image, sd_mmc_card]
+    components: [local_image]
+
+  - source:
+      type: git
+      url: https://github.com/n-serrette/esphome_sd_card
+    components: [ sd_mmc_card ]
 
 
 color:
@@ -190,7 +195,7 @@ substitutions:
   w07: "Воскресенье"
   
   m01: "Января"
-  m02: "Вефрвля"
+  m02: "Февраля"
   m03: "Марта"
   m04: "Апреля"
   m05: "Мая"
