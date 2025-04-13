@@ -1,3 +1,6 @@
 [submodule "config/local_file"]
 	path = config/local_file
 	url = git@github.com:abel-msk/esphome_sdcard_images.git
+[submodule "config/esphome_sd_card"]
+	path = config/esphome_sd_card
+	url = https://github.com/abel-msk/esphome_sd_card
