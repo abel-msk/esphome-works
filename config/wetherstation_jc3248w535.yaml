@@ -249,11 +249,21 @@ i2c:
     id: sensor_bus
 
 web_server:
-  port: 80
+  port: 3218
   local: true
+  include_internal: true
   auth:
-    username: "abel"
-    password: "test"
+    username: !secret web_server_username
+    password: !secret web_server_password
+
+sd_file_server:
+  id: file_server
+  sd_mmc_card_id: sdcard1
+  url_prefix: file
+  root_path: "/"
+  enable_deletion: true
+  enable_download: true
+  enable_upload: true
 
 sd_mmc_card:
   id: sdcard1
