@@ -34,8 +34,11 @@ external_components:
   - source:
         type: local
         path: local_file/components
-    components: [local_image, sd_mmc_card]
-
+    components: [local_image, sd_mmc_card ]
+  - source:
+        type: local
+        path: esphome_sd_card/components
+    components: [sd_file_server ]
 
 color:
   - id: cClearDay
@@ -243,10 +246,30 @@ captive_portal:
 #   username: livingroom
 #   password: !secret mqtt_password
 
+web_server:
+  port: 3218
+  local: True
+  include_internal: true
+  auth:
+    username: !secret web_server_username
+    password: !secret web_server_password
+    
+
 i2c:
   - sda: 18
     scl: 17
     id: sensor_bus
+
+
+sd_file_server:
+  id: file_server
+  url_prefix: file
+  root_path: "/"
+  sd_mmc_card_id: sdcard1
+  enable_deletion: true
+  enable_download: true
+  enable_upload: true
+
 
 sd_mmc_card:
   id: sdcard1
