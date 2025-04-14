@@ -104,12 +104,21 @@ globals:
     type: int
     restore_value: yes
     initial_value: "1" 
+  - id:  gfloatExtSensorValue
+    type: float
+    restore_value: no
+    initial_value: "-100" 
+  - id: gboolHAAvailable
+    type: bool
+    restore_value: no
+    initial_value: "true"
   
 
  # tClearDay:  1; tClearNight:  2;  tPartlyCloudDay: 3;  tCloudNight:  4;  tCloudDay:  5
  # tRainDay: 6; tRainNight: 7;  tSnowDay:  8;  tSnowNight: 9
 
 substitutions:
+  remoteSensorURL:          "http://interabel:(St2Ateroq12)@192.168.168.97:3218/sensor/temperature"
   displayRotation:          "270"
 
   sensorStateSunnyDay:      "sunny"
@@ -379,22 +388,27 @@ time:
       - 1.pool.ntp.org
     on_time_sync:
       then:
-          - logger.log: "On time sync Event."
-          - script.execute: cmdUpdateCalendar
-          # - script.execute: cmdUpdateDisplay
+        - logger.log: "On time sync Event."
+        - script.execute: cmdUpdateCalendar
+        # - script.execute: cmdUpdateDisplay
     on_time:
       # Every 1 minutes
       - seconds: 0
-        minutes: '*'
-        then:
+          minutes: '*'
+          then:
           - script.execute: cmdUpdateCalendar
           - script.execute: backLight
       # Every 10 minutes    
       - seconds: 0
-        minutes: '/10'
-        then:
+          minutes: '/10'
+          then:
           - script.execute: cmdUpdateDisplay
-  
+      # Every 1 minutes     
+      - seconds: 0
+          minutes: '*'
+          then:
+          - script.execute: updateExtSensor
+    
 script:
 
   - id: backLight
@@ -494,11 +508,15 @@ script:
               args: '(new const char *[10]{ "${iClearDay}", "${iClearNight}", "${iPartlyCloudDay}", "${iPartlyCloudNight}", 
                         "${iCloudDay}", "${iCloudNight}", "${iRainDay}", "${iRainNight}","${iSnowDay}", "${iSnowNight}" })[id(gintCurWType)-1]'
 
-      - lvgl.label.update:
-          id: wetherTempNum
-          text:
-              format: "%+.1f°"
-              args: ['id(haWetherOutdoor).state']
+        #--
+        #
+        #   TODO:  Check if HomeAsistance accessible
+        #
+      # - lvgl.label.update:
+      #     id: wetherTempNum
+      #     text:
+      #         format: "%+.1f°"
+      #         args: ['id(haWetherOutdoorSens).state']
 
       - if:
           condition:
@@ -508,6 +526,7 @@ script:
           then:
             - script.execute: updateWetherType
      
+
   - id: updateWetherType
     then:
       - local_image.reload: 
@@ -521,6 +540,61 @@ script:
                         images[id(gintCurWType)-1], id(gintCurWType));
               return  images[id(gintCurWType)-1];
     
+    #--
+    #
+    #    IF API connected  use  temperature sensor from HomeAsistence
+    #    else try read temperature value directly fom remote esp sensor
+    #
+  - id: updateExtSensor
+    then:
+      - if:
+          condition:
+              api.connected:
+          then:
+            - lvgl.label.update:
+                id: wetherTempNum
+                text:
+                    format: "%+.1f°"
+                    args: ['id(haWetherOutdoorSens).state']
+          else:
+              - logger.log:  "Generate HTTP request to ${remoteSensorURL}"
+              - http_request.get:
+                  url: "${remoteSensorURL}"
+                  capture_response: true
+                  on_response:
+                    then:
+                      - if:
+                          condition:
+                            lambda: return response->status_code == 200;
+                          then:
+                            - lambda: |-
+                                json::parse_json(body, [](JsonObject root) -> bool {
+                                    if (root["value"])  
+                                    {
+                                        id(gfloatExtSensorValue) = root["value"];
+                                        return true;
+                                    }
+                                    else {
+                                        ESP_LOGI(TAG,"No 'value' key in response %s",body.c_str());
+                                        id(gfloatExtSensorValue) = -100;
+                                        return false;
+                                    }
+                                });
+                            - if:
+                                condition:
+                                  lambda: |-
+                                      return id(gfloatExtSensorValue) > -100;
+                                then:
+                                  - lvgl.label.update:
+                                      id: wetherTempNum
+                                      text:
+                                          format: "%+.1f°"
+                                          args: [id(gfloatExtSensorValue)]   
+                          else:
+                              - logger.log:
+                                  format: "Error: Response status: %d, message %s"
+                                  args: [ 'response->status_code', 'body.c_str()' ]
+
 
 
 # Config examples
@@ -616,10 +690,11 @@ sensor:
     update_interval: 60s
 
   - platform: homeassistant
-    id: haWetherOutdoor
+    id: haWetherOutdoorSens
     name: "External outdoor thermometr sensor"
     entity_id: sensor.nanosens01_temperature
     disabled_by_default: true
+
 
 
 # text: !lambda return id(text_sensor).state;
