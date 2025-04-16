@@ -1,0 +1,26 @@
+esphome:
+  name: arduino-test
+  friendly_name: ARDUINO_test
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+
+external_components:
+  - source:
+        type: local
+        path: esphome_sd_card/components
+    components: [sd_mmc_card]
+
+
+sd_mmc_card:
+  id: disk1
+  mode_1bit: false
+  clk_pin: GPIO14
+  cmd_pin: GPIO15
+  data0_pin: GPIO2
+  data1_pin: GPIO4
+  data2_pin: GPIO12
+  data3_pin: GPIO13
