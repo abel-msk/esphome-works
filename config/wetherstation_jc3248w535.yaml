@@ -34,11 +34,8 @@ external_components:
   - source:
         type: local
         path: local_file/components
-    components: [local_image, sd_mmc_card ]
-  - source:
-        type: local
-        path: esphome_sd_card/components
-    components: [sd_file_server ]
+    components: [local_image, sd_mmc_card]
+
 
 color:
   - id: cClearDay
@@ -260,17 +257,6 @@ i2c:
     scl: 17
     id: sensor_bus
 
-
-sd_file_server:
-  id: file_server
-  url_prefix: file
-  root_path: "/"
-  sd_mmc_card_id: sdcard1
-  enable_deletion: true
-  enable_download: true
-  enable_upload: true
-
-
 sd_mmc_card:
   id: sdcard1
   mode_1bit: true
@@ -278,6 +264,14 @@ sd_mmc_card:
   clk_pin: GPIO12
   data0_pin: GPIO13
   # power_ctrl_pin: GPIO10
+
+sd_file_server:
+  id: file_server
+  url_prefix: file
+  root_path: "/"
+  enable_deletion: true
+  enable_download: true
+  enable_upload: true
 
 
 font:
