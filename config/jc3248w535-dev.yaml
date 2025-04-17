@@ -73,3 +73,23 @@ sd_file_server:
 
 substitutions:
   displayRotation:          "270"
+
+
+time:
+    - platform: sntp
+id: netwotk_time
+timezone: Europe/Moscow
+servers:
+    - 192.168.168.1
+    - 0.pool.ntp.org
+    - 1.pool.ntp.org
+on_time_sync:
+    then:
+        - logger.log: "On time sync Event."
+        - script.execute: cmdUpdateCalendar
+    # - script.execute: cmdUpdateDisplay
+on_time:
+    - seconds: 0
+        minutes: '*'
+        then:
+            - logger.log: "On time sync Event."

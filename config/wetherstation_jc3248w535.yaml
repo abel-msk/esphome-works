@@ -34,39 +34,15 @@ external_components:
   - source:
         type: local
         path: local_file/components
-    components: [local_image, sd_mmc_card]
-
+    components: [local_image]
+  - source:
+        type: local
+        path: esphome_sd_card/components
+    components: [sd_file_server, sd_mmc_card ]
 
 color:
-  - id: cClearDay
+  - id: cDefFrameBG
     hex: "008ed0"
-
-  - id: cClearNight
-    hex: "072730"
-
-  - id: cPartlyCloudDay
-    hex: 2084c0
-
-  - id: cPartlyCloudNight
-    hex: "06263e"
-
-  - id: cCloudNight
-    hex: 1e2226
-
-  - id: cCloudDay
-    hex: 6b8eb0
-
-  - id: cRainDay
-    hex: 2f4342
-
-  - id: cRainNight
-    hex: 2f4342
-
-  - id: cSnowDay
-    hex: 5d90a4
-
-  - id: cSnowNight
-    hex: 243240
 
   - id: cTextSecond
     hex: FFFFFF
@@ -74,14 +50,6 @@ color:
   - id: cTextPrim
     hex: FFFFFF
 
-      
-  # cPartlyCloudDay:     "0x6e8faf" # partly_cloudy_day
-  # cCloudNight:         "0x22262f" # partly_cloudy_night
-  # cCloudDay:           "0x6e8faf" # cloud
-  # cRainDay:            "0x2f4342" # rainy
-  # cRainNight:          "0x2f4342"
-  # cSnowDay:            "0x5d90a4" # snowing
-  # cSnowNight:          "0x243240" # snowing
 
 globals:
   - id: gboolIsDay
@@ -92,10 +60,6 @@ globals:
     type: bool
     restore_value: no
     initial_value: "true"
-  # - id: gstrLastUrl
-  #   type: string
-  #   restore_value: yes
-  #   initial_value: "/bgwf/day_clear.png" 
   - id: gintCurWType
     type: int
     restore_value: no
@@ -108,14 +72,7 @@ globals:
     type: float
     restore_value: no
     initial_value: "-100" 
-  - id: gboolHAAvailable
-    type: bool
-    restore_value: no
-    initial_value: "true"
   
-
- # tClearDay:  1; tClearNight:  2;  tPartlyCloudDay: 3;  tCloudNight:  4;  tCloudDay:  5
- # tRainDay: 6; tRainNight: 7;  tSnowDay:  8;  tSnowNight: 9
 
 substitutions:
   remoteSensorURL:          "http://interabel:(St2Ateroq12)@192.168.168.97:3218/sensor/temperature"
@@ -260,6 +217,7 @@ web_server:
     username: !secret web_server_username
     password: !secret web_server_password
     
+http_request:
 
 i2c:
   - sda: 18
@@ -277,7 +235,7 @@ sd_mmc_card:
 sd_file_server:
   id: file_server
   url_prefix: file
-  root_path: "/"
+  root_path: "/bg"
   enable_deletion: true
   enable_download: true
   enable_upload: true
@@ -409,22 +367,21 @@ time:
         - script.execute: cmdUpdateCalendar
         # - script.execute: cmdUpdateDisplay
     on_time:
-      # Every 1 minutes
-      - seconds: 0
+        - seconds: 0
           minutes: '*'
           then:
-          - script.execute: cmdUpdateCalendar
-          - script.execute: backLight
-      # Every 10 minutes    
-      - seconds: 0
+              - script.execute: cmdUpdateCalendar
+              - script.execute: backLight
+        # Every 10 minutes    
+        - seconds: 0
           minutes: '/10'
           then:
-          - script.execute: cmdUpdateDisplay
-      # Every 1 minutes     
-      - seconds: 0
+                - script.execute: cmdUpdateDisplay
+        # Every 1 minutes     
+        - seconds: 0
           minutes: '*'
           then:
-          - script.execute: updateExtSensor
+              - script.execute: updateExtSensor
     
 script:
 
@@ -592,7 +549,7 @@ script:
                                         return true;
                                     }
                                     else {
-                                        ESP_LOGI(TAG,"No 'value' key in response %s",body.c_str());
+                                        ESP_LOGI("parseJson","No 'value' key in response");
                                         id(gfloatExtSensorValue) = -100;
                                         return false;
                                     }
@@ -713,9 +670,6 @@ sensor:
     disabled_by_default: true
 
 
-
-# text: !lambda return id(text_sensor).state;
-
 text_sensor:
   - platform: homeassistant
     id: haWetherType
@@ -765,7 +719,7 @@ lvgl:
     - id: valuesFrameStyle
       align: TOP_LEFT
       bg_opa: 30%
-      bg_color: cClearDay
+      bg_color: cDefFrameBG
       # bg_grad: wg_bg_grad
       text_color: cTextSecond
       clip_corner: true
